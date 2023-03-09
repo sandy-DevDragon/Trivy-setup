@@ -12,6 +12,25 @@ spec:
             - name: trivy-client
               image: sandeep97/trivy-acr-scanner:latest
               env:
+               - name: LOAD_BALANCER_PUBLIC_IP
+                 value: "20.204.221.104"
+               - name: ACR_NAME
+                 value: "tynybaytrivy"
+               - name: AZURE_CLIENT_ID
+                 valueFrom:
+                   secretKeyRef:
+                     name: service-principal-secret
+                     key: clientid
+               - name: AZURE_CLIENT_SECRET
+                 valueFrom:
+                   secretKeyRef:
+                     name: service-principal-secret
+                     key: clientsecret
+               - name: AZURE_TENANT_ID
+                 valueFrom:
+                   secretKeyRef:
+                     name: service-principal-secret
+                     key: tenantid
                - name: STORAGE_ACCOUNT_NAME
                  valueFrom:
                    secretKeyRef:
@@ -33,8 +52,6 @@ spec:
                   mountPath: /etc/trivy
                 - name: azure-storage-secrets-volume
                   mountPath: /secrets
-          imagePullSecrets:
-            - name: acr-secret 
           volumes:
             - name: config-volume
               configMap:

@@ -2,11 +2,11 @@
 Trivy setup for image scanning used by tynybay also
 
 
-##Table of Contents
+## Table of Contents
 - Prerequisites
 - Usage
 
-##Prerequisites
+## Prerequisites
 Make sure that the below items are in place:
 
 1. You have an existing Azure Subscription, if not create one.
@@ -44,7 +44,7 @@ az storage container create --account-name <account-name> --account-key <account
 10. Make sure kubectl is installed on your terminal/cmd prompt using the below documentation
     [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-##Usage
+## Usage
 1. Clone the repository to your local machine
 2. Navigate to the project directory
 3. Apply the deployment and service manifest files onto the k8s cluster using the below command
@@ -52,12 +52,31 @@ az storage container create --account-name <account-name> --account-key <account
 kubectl apply -f trivy-server.yaml
 kubectl apply -f trivy-service.yaml
 ```
-4. Get the external/public ip of the load balancer service using the below command
+4. Get the external/public ip of the load balancer service using the below command and paste it in the "LOAD_BALANCER_PUBLIC_IP" env variable inside k8s-cronjob.yaml file
 ```bash
 kubectl get svc trivy-server-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
-5. Create a service principal in azure as stated below:
+5. Get your storage account name/key using the below command and paste the key in the "accountkey" inside azure-storage-secret.yaml
+```bash
+az storage account keys list --account-name <account-name> --resource-group <resourcegroupname>
+```
+6. Apply the storage secret file onto the k8s cluster using the below command
+```bash
+kubectl apply -f azure-storage-secret.yaml
+```
+7. Create a service principal in azure as stated below:
 ```bash
 az ad sp create-for-rbac --name "trivy-scanner" --scopes "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name>" --role "Contributor" --output json
 ```
-6. 
+8. Store the ClientId,TenantId & ClientSecret from the output of the previous command and paste them in the respective env variable inside the k8s-cronjob.yaml file.
+
+9. After adding all the necessary Id's and Key's inside the cronjob file, run the below command to apply it.
+ ```bash
+kubectl apply -f k8s-cronjob.yaml
+```
+10. Check the logs of the trivy-client pod after cronjob has started. Run the following commands-
+```bash
+kubectl get all
+kubectl logs pod/trivy-client-********-*****
+```
+Note: The stars marked here represent the unique id of the trivy-client pod which can be fetched from the output of the first command.
