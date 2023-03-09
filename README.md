@@ -80,3 +80,6 @@ kubectl get all
 kubectl logs pod/trivy-client-********-*****
 ```
 Note: The stars marked here represent the unique id of the trivy-client pod which can be fetched from the output of the first command.
+
+11. You should be able to see the trivy scanned vulnerability reports inside the azure storage container if the setup is performed correctly.
+![Azure Container Snapshot](./azure-container-output.png)
