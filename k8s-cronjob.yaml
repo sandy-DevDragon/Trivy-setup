@@ -13,7 +13,7 @@ spec:
               image: sandeep97/trivy-acr-scanner:latest
               env:
                - name: LOAD_BALANCER_PUBLIC_IP
-                 value: "20.204.221.104"
+                 value: "20.219.40.45"
                - name: ACR_NAME
                  value: "tynybaytrivy"
                - name: AZURE_CLIENT_ID

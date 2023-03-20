@@ -68,18 +68,23 @@ kubectl apply -f azure-storage-secret.yaml
 ```bash
 az ad sp create-for-rbac --name "trivy-scanner" --scopes "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name>" --role "Contributor" --output json
 ```
-8. Store the ClientId,TenantId & ClientSecret from the output of the previous command and paste them in the respective env variable inside the k8s-cronjob.yaml file.
+8. Store the ClientId,TenantId & ClientSecret from the output of the previous command and paste them in the respective env variable inside the service-principal-secret.yaml file.
 
-9. After adding all the necessary Id's and Key's inside the cronjob file, run the below command to apply it.
+9. Apply the service principal secret file onto the k8s cluster using the below command
+```bash
+kubectl apply -f service-principal-secret.yaml
+```
+
+10. After adding all the necessary Id's and Key's inside the cronjob file, run the below command to apply it.
  ```bash
 kubectl apply -f k8s-cronjob.yaml
 ```
-10. Check the logs of the trivy-client pod after cronjob has started. Run the following commands-
+11. Check the logs of the trivy-client pod after cronjob has started. Run the following commands-
 ```bash
 kubectl get all
 kubectl logs pod/trivy-client-********-*****
 ```
 Note: The stars marked here represent the unique id of the trivy-client pod which can be fetched from the output of the first command.
 
-11. You should be able to see the trivy scanned vulnerability reports inside the azure storage container if the setup is performed correctly.
+12. You should be able to see the trivy scanned vulnerability reports inside the azure storage container if the setup is performed correctly.
 ![Azure Container Snapshot](./azure-container-output.png)
