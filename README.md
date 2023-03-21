@@ -64,27 +64,31 @@ az storage account keys list --account-name <account-name> --resource-group <res
 ```bash
 kubectl apply -f azure-storage-secret.yaml
 ```
-7. Create a service principal in azure as stated below:
+7. Apply the trivy-client-configmap.yaml file to the k8s cluster using the below command
 ```bash
-az ad sp create-for-rbac --name "trivy-scanner" --scopes "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name>" --role "Contributor" --output json
+kubectl apply -f trivy-client-configmap.yaml
 ```
-8. Store the ClientId,TenantId & ClientSecret from the output of the previous command and paste them in the respective env variable inside the service-principal-secret.yaml file.
+8. Create a service principal in azure as stated below:
+```bash
+az ad sp create-for-rbac --name "trivy-scanner" --scopes "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name_of_acr>" --role "Contributor" --output json
+```
+9. Store the ClientId,TenantId & ClientSecret from the output of the previous command and paste them in the respective env variable inside the service-principal-secret.yaml file.
 
-9. Apply the service principal secret file onto the k8s cluster using the below command
+10. Apply the service principal secret file onto the k8s cluster using the below command
 ```bash
 kubectl apply -f service-principal-secret.yaml
 ```
 
-10. After adding all the necessary Id's and Key's inside the cronjob file, run the below command to apply it.
+11. After adding all the necessary Id's and Key's inside the cronjob file, run the below command to apply it.
  ```bash
 kubectl apply -f k8s-cronjob.yaml
 ```
-11. Check the logs of the trivy-client pod after cronjob has started. Run the following commands-
+12. Check the logs of the trivy-client pod after cronjob has started. Run the following commands-
 ```bash
 kubectl get all
 kubectl logs pod/trivy-client-********-*****
 ```
 Note: The stars marked here represent the unique id of the trivy-client pod which can be fetched from the output of the first command.
 
-12. You should be able to see the trivy scanned vulnerability reports inside the azure storage container if the setup is performed correctly.
+13. You should be able to see the trivy scanned vulnerability reports inside the azure storage container if the setup is performed correctly.
 ![Azure Container Snapshot](./azure-container-output.png)
