@@ -184,7 +184,7 @@ workflows:
       # Auto-build Docker image for main
       # If you need to deploy/build on your branch, change the below workflow filters to *filter_all_branches_and_tags_except_main
       - build:
-          <<: *filter_for_main_branch
+          <<: *filter_all_branches_and_tags_except_main
           requires:
             - test
           context: canvass-test-build-deploy
