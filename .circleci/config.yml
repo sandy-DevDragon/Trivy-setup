@@ -1,0 +1,203 @@
+version: 2.1
+
+commands:
+  restore-dependencies:
+    steps:
+      - restore_cache:
+          keys:
+            - npm-deps-key-v1-{{ checksum "package-lock.json" }}
+            - npm-deps-key-v1-
+
+references:
+  node-image: &node-image
+    docker:
+      - image: cimg/node:16.14.2
+
+  install_canvass_deployer_package: &install_canvass_deployer_package
+    run:
+      name: Install Invoke Package
+      command: pip install git+https://${GITHUB_API_KEY}:x-oauth-basic@github.com/canvassanalytics/canvass-deployer.git@master
+
+  invoke_build_command: &invoke_build_command
+    run:
+      name: Build Project
+      command: invoke --collection invoke_tasks build
+
+  build_image: &build_image
+    working_directory: ~/Canvass-trivy
+    docker:
+      - image: cimg/python:3.10.4-node
+
+  filter_all_branches_and_tags_except_main:
+    &filter_all_branches_and_tags_except_main
+    filters:
+      tags:
+        only: /.*/
+      branches:
+        ignore:
+          - main
+
+  filter_for_main_branch: &filter_for_main_branch
+    filters:
+      branches:
+        only:
+          - main
+
+jobs:
+  dependency-installation:
+    <<: *node-image
+    resource_class: small
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: Install Dependencies
+          command: npm install
+      - save_cache:
+          key: npm-deps-key-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+
+  lint:
+    <<: *node-image
+    resource_class: medium
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: Check Linters for Coding Standards
+          command: npm run lint
+
+  typecheck:
+    <<: *node-image
+    resource_class: medium
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: Type Checking
+          command: npm run typecheck
+
+  test:
+    <<: *node-image
+    resource_class: medium
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: 'Run New and Updated Tests'
+          command: npm run test -- --ci --testResultsProcessor="jest-junit"
+      - store_test_results:
+          path: ./coverage/
+
+  test-all:
+    <<: *node-image
+    resource_class: medium
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: Run All Tests
+          command: npm run test:all -- --ci --testResultsProcessor="jest-junit"
+      - store_test_results:
+          path: ./coverage/
+
+  chromatic:
+    <<: *node-image
+    steps:
+      - checkout
+      - restore-dependencies
+      - run:
+          name: Push Storybook to Chromatic
+          command: npm run chromatic
+
+  build:
+    <<: *build_image
+    steps:
+      - checkout
+      - setup_remote_docker
+      - *install_canvass_deployer_package
+      - *invoke_build_command
+
+  # deploy-to-sandbox-5:
+  #   <<: *build_image
+  #   resource_class: small
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker
+  #     - *install_canvass_deployer_package
+  #     - run:
+  #         name: Deploy Project to Sandbox-5
+  #         command: invoke --collection invoke_tasks deploy --env-name PREPROD --namespace sandbox-5
+
+  # deploy-to-sandbox-6:
+  #   <<: *build_image
+  #   resource_class: small
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker
+  #     - *install_canvass_deployer_package
+  #     - run:
+  #         name: Deploy Project to Sandbox-6
+  #         command: invoke --collection invoke_tasks deploy --env-name PREPROD --namespace sandbox-6
+
+  # deploy-to-ml-sandbox:
+  #   <<: *build_image
+  #   resource_class: small
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker
+  #     - *install_canvass_deployer_package
+  #     - run:
+  #         name: Deploy Project to ML-SANDBOX
+  #         command: invoke --collection invoke_tasks deploy --env-name INTERNALDEV --namespace ml-sandbox
+
+workflows:
+  build-test-and-deploy:
+    jobs:
+      - dependency-installation
+      - lint:
+          requires:
+            - dependency-installation
+      - typecheck:
+          requires:
+            - lint
+      - test:
+          requires:
+            - lint
+      - test-all-approval:
+          type: approval
+          requires:
+            - lint
+            - test
+      - test-all:
+          requires:
+            - test-all-approval
+      - chromatic-approval:
+          type: approval
+          requires:
+            - lint
+            - test
+      - chromatic:
+          requires:
+            - chromatic-approval
+      # Auto-build Docker image for main
+      # If you need to deploy/build on your branch, change the below workflow filters to *filter_all_branches_and_tags_except_main
+      - build:
+          <<: *filter_for_main_branch
+          requires:
+            - test
+          context: canvass-test-build-deploy
+      # - ml-sandbox-approval:
+      #     <<: *filter_for_main_branch
+      #     type: approval
+      #     requires:
+      #       - build
+      #     context: canvass-test-build-deploy
+      # - deploy-to-ml-sandbox:
+      #     <<: *filter_for_main_branch
+      #     requires:
+      #       - ml-sandbox-approval
+      #     context: canvass-dev-build-deploy
+
+

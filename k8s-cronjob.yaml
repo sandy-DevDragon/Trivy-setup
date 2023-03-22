@@ -13,9 +13,9 @@ spec:
               image: sandeep97/trivy-acr-scanner:latest
               env:
                - name: LOAD_BALANCER_PUBLIC_IP
-                 value: "20.204.221.104"
+                 value: "20.220.43.168"
                - name: ACR_NAME
-                 value: "tynybaytrivy"
+                 value: "canvassdevops"
                - name: AZURE_CLIENT_ID
                  valueFrom:
                    secretKeyRef:
