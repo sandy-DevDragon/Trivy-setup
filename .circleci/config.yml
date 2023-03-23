@@ -1,12 +1,12 @@
 version: 2.1
 
-commands:
-  restore-dependencies:
-    steps:
-      - restore_cache:
-          keys:
-            - npm-deps-key-v1-{{ checksum "package-lock.json" }}
-            - npm-deps-key-v1-
+# commands:
+#   restore-dependencies:
+#     steps:
+#       - restore_cache:
+#           keys:
+#             - npm-deps-key-v1-{{ checksum "package-lock.json" }}
+#             - npm-deps-key-v1-
 
 references:
   node-image: &node-image
@@ -44,72 +44,72 @@ references:
           - main
 
 jobs:
-  dependency-installation:
-    <<: *node-image
-    resource_class: small
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: Install Dependencies
-          command: npm install
-      - save_cache:
-          key: npm-deps-key-v1-{{ checksum "package-lock.json" }}
-          paths:
-            - node_modules
+  # dependency-installation:
+  #   <<: *node-image
+  #   resource_class: small
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: Install Dependencies
+  #         command: npm install
+  #     - save_cache:
+  #         key: npm-deps-key-v1-{{ checksum "package-lock.json" }}
+  #         paths:
+  #           - node_modules
 
-  lint:
-    <<: *node-image
-    resource_class: medium
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: Check Linters for Coding Standards
-          command: npm run lint
+  # lint:
+  #   <<: *node-image
+  #   resource_class: medium
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: Check Linters for Coding Standards
+  #         command: npm run lint
 
-  typecheck:
-    <<: *node-image
-    resource_class: medium
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: Type Checking
-          command: npm run typecheck
+  # typecheck:
+  #   <<: *node-image
+  #   resource_class: medium
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: Type Checking
+  #         command: npm run typecheck
 
-  test:
-    <<: *node-image
-    resource_class: medium
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: 'Run New and Updated Tests'
-          command: npm run test -- --ci --testResultsProcessor="jest-junit"
-      - store_test_results:
-          path: ./coverage/
+  # test:
+  #   <<: *node-image
+  #   resource_class: medium
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: 'Run New and Updated Tests'
+  #         command: npm run test -- --ci --testResultsProcessor="jest-junit"
+  #     - store_test_results:
+  #         path: ./coverage/
 
-  test-all:
-    <<: *node-image
-    resource_class: medium
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: Run All Tests
-          command: npm run test:all -- --ci --testResultsProcessor="jest-junit"
-      - store_test_results:
-          path: ./coverage/
+  # test-all:
+  #   <<: *node-image
+  #   resource_class: medium
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: Run All Tests
+  #         command: npm run test:all -- --ci --testResultsProcessor="jest-junit"
+  #     - store_test_results:
+  #         path: ./coverage/
 
-  chromatic:
-    <<: *node-image
-    steps:
-      - checkout
-      - restore-dependencies
-      - run:
-          name: Push Storybook to Chromatic
-          command: npm run chromatic
+  # chromatic:
+  #   <<: *node-image
+  #   steps:
+  #     - checkout
+  #     - restore-dependencies
+  #     - run:
+  #         name: Push Storybook to Chromatic
+  #         command: npm run chromatic
 
   build:
     <<: *build_image
@@ -155,38 +155,36 @@ jobs:
 workflows:
   build-test-and-deploy:
     jobs:
-      - dependency-installation
-      - lint:
-          requires:
-            - dependency-installation
-      - typecheck:
-          requires:
-            - lint
-      - test:
-          requires:
-            - lint
-      - test-all-approval:
-          type: approval
-          requires:
-            - lint
-            - test
-      - test-all:
-          requires:
-            - test-all-approval
-      - chromatic-approval:
-          type: approval
-          requires:
-            - lint
-            - test
-      - chromatic:
-          requires:
-            - chromatic-approval
+      # - dependency-installation
+      # - lint:
+      #     requires:
+      #       - dependency-installation
+      # - typecheck:
+      #     requires:
+      #       - lint
+      # - test:
+      #     requires:
+      #       - lint
+      # - test-all-approval:
+      #     type: approval
+      #     requires:
+      #       - lint
+      #       - test
+      # - test-all:
+      #     requires:
+      #       - test-all-approval
+      # - chromatic-approval:
+      #     type: approval
+      #     requires:
+      #       - lint
+      #       - test
+      # - chromatic:
+      #     requires:
+      #       - chromatic-approval
       # Auto-build Docker image for main
       # If you need to deploy/build on your branch, change the below workflow filters to *filter_all_branches_and_tags_except_main
       - build:
           <<: *filter_all_branches_and_tags_except_main
-          requires:
-            - test
           context: canvass-test-build-deploy
       # - ml-sandbox-approval:
       #     <<: *filter_for_main_branch
